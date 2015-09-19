@@ -67,7 +67,7 @@ def main():
         sock.close()
         print "Closed server socket."
     
-    outputFilePath = "server_times_same_machine.txt"
+    outputFilePath = "server_times_same_machine_without_print.txt"
     print "Writing times to the file: " + outputFilePath    
     with open(outputFilePath, "w") as f:
         f.write("Scenario: Client and Server are the same machine.\n")

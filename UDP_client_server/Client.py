@@ -37,8 +37,8 @@ def main():
     sendTimes = []
     receiveTimes = []
     
-    serverIP = '128.138.201.67'
-    serverPort = 46805
+    serverIP = '10.0.0.5'
+    serverPort = 57704
     #message to be sent to server
     message = 'Hello World!'
     
@@ -53,10 +53,10 @@ def main():
             print "Sending {0} to {1} on port {2}.".format(message, serverIP, serverPort)
             sock.sendto(message, (serverIP, serverPort))
             timeSent = datetime.datetime.now().time().strftime("%H:%M:%S.%f")
-            print "Client send message at time: " + timeSent
+            #print "Client send message at time: " + timeSent
             
             #wait for echo from server
-            print "Waiting for echo from server."
+            #print "Waiting for echo from server."
             data, serverAddr = sock.recvfrom(1024)
             timeReceived = datetime.datetime.now().time().strftime("%H:%M:%S.%f")
             print "Client received message at time: " + timeReceived
@@ -71,7 +71,7 @@ def main():
         sock.close()
         print "Closed client socket."
         
-    outputFilePath = "client_times_diff_wan.txt"
+    outputFilePath = "client_times_same_machine_without_print.txt"
     print "Writing times to file: " + outputFilePath
     with open(outputFilePath, "w") as f:
         f.write("Scenario: Client and Server are on different machines accross WAN.\n")
