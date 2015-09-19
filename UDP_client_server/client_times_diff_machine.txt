@@ -1,0 +1,11 @@
+Scenario: Client and Server are different machines in the same LAN.
+Send time: 19:49:36.247575
+Send time: 19:49:36.249740
+Send time: 19:49:36.250845
+Send time: 19:49:36.251953
+Send time: 19:49:36.252982
+Receive time: 19:49:36.249530
+Receive time: 19:49:36.250659
+Receive time: 19:49:36.251764
+Receive time: 19:49:36.252787
+Receive time: 19:49:36.253883

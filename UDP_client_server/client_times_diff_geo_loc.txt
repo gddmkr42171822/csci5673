@@ -1,0 +1,11 @@
+Scenario: Client and Server are in different geographic locations.
+Send time: 19:57:45.067278
+Send time: 19:57:45.087343
+Send time: 19:57:45.106292
+Send time: 19:57:45.119627
+Send time: 19:57:45.135262
+Receive time: 19:57:45.087234
+Receive time: 19:57:45.106178
+Receive time: 19:57:45.119442
+Receive time: 19:57:45.135150
+Receive time: 19:57:45.150362

@@ -1,0 +1,11 @@
+Scenario: Client and Server are the same machine.
+Send time: 19:39:11.389420
+Send time: 19:39:11.390539
+Send time: 19:39:11.390664
+Send time: 19:39:11.390799
+Send time: 19:39:11.390932
+Receive time: 19:39:11.390473
+Receive time: 19:39:11.390612
+Receive time: 19:39:11.390753
+Receive time: 19:39:11.390880
+Receive time: 19:39:11.391006

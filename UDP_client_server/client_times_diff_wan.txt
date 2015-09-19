@@ -1,0 +1,11 @@
+Scenario: Client and Server are on different machines accross WAN.
+Send time: 20:52:07.663895
+Send time: 20:52:07.684310
+Send time: 20:52:07.707340
+Send time: 20:52:07.726174
+Send time: 20:52:07.745035
+Receive time: 20:52:07.684211
+Receive time: 20:52:07.707207
+Receive time: 20:52:07.726042
+Receive time: 20:52:07.744848
+Receive time: 20:52:07.769690
