@@ -17,7 +17,8 @@ Attributes of servers
 2) Each state machine has a log of commands *completed*
     Our case all the commands for the queue.
 3) Servers have 3 states: follower, candidate, leader
-4) Each server has a timer that times out betwee 150 to 300 ms
+4) Each server has a timer that times out between 150 to 300 ms, goes to candidate state, and starts an election
+    Multithreaded timer?
 
 Algorithm
 -----------
@@ -42,6 +43,8 @@ Leader election:
 
 '''
 from FTQueue import FTQueue
+from threading import Thread, Semaphore
+import time
 
 
 class Server(object):
@@ -63,6 +66,52 @@ class Server(object):
         # A list of commands that create the log
         self.log = []
         
+        # Keep track of the time until the election timeout
+        self.timerStart = 0
+        self.timerEnd = 0
+        self.timerLock = Semaphore()
+        #self.timerLock.acquire()
+        # Create a thread to run the election timer
+        # A list of the threads running in the program
+        self.threads = []
+        self.startElectionTimerThreads()
+        #self.runElectionTimer()
+    
+    def startElectionTimerThreads(self):
+        worker = Thread(target=self.runElectionTimer)
+        worker.start()
+        self.threads.append(worker)
+        print "Started election timer thread."
+        #worker = Thread(target=self.changeServerState)
+        #worker.start()
+        #self.threads.append(worker)
+        #print "Started change server state thread."
+    
+    def changeServerState(self):
+        while True:
+            self.timerLock.acquire()
+            #if self.state == ServerState.follower:
+            #print "Changing server state to candidate."
+            self.state = ServerState.candidate
+            # TODO: Create a new election
+            
+        
+    def runElectionTimer(self):
+        while True:
+            if self.timerStart == 0:
+                self.timerStart = time.time()
+            self.timerEnd = time.time()
+            c = self.timerEnd - self.timerStart
+            #sys.exit()
+            # Keep track of the time and make server
+            # state changes after 3 seconds (3000 milliseconds)
+            if c >= 3:
+                print "Hello"
+                #self.timerLock.release()
+                self.timerStart = 0
+                
+                
+            
         
         
     def create_Queue(self, label):

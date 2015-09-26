@@ -5,6 +5,7 @@ Created on Sep 25, 2015
 '''
 from Server import Server
 from Server import ServerState
+import time
 
 def assertion(boolean, testName):
     if boolean:
@@ -13,11 +14,16 @@ def assertion(boolean, testName):
         print(testName + " FAILED")
         
 def main():
-    testInitialServerState()
+    #testInitialServerState()
+    testServerTimer()
 
 def testInitialServerState():
     s = Server({})
-    assertion(s.state == ServerState.follower, "Server should start in the follower state")
+    assertion(s.state == ServerState.follower, "Server should start in the follower state.")
+
+def testServerTimer():
+    s = Server({})
+        
 
 if __name__ == '__main__':
     main()
