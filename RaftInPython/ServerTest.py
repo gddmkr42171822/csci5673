@@ -16,6 +16,7 @@ def assertion(boolean, testName):
 def main():
     #testInitialServerState()
     #testServerTimer()
+    pass
 
 def testInitialServerState():
     s = Server({})
