@@ -23,15 +23,23 @@ class FTQueue(object):
         self.id = randint(0,100)
     
     def put(self, item):
+        '''
+        '''
         self.queue.append(item)
         
     def qsize(self):
+        '''
+        '''
         return len(self.queue)
     
     def get(self):
+        '''
+        '''
         return self.queue.pop(0)
     
     def top(self):
+        '''
+        '''
         return self.queue[0]
     
         

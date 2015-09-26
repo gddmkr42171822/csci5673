@@ -6,6 +6,37 @@ Created on Sep 25, 2015
 Pseudocode:
 
 1) Server will have a dictionary of queues referenced by QueueID
+
+
+
+Concensus Algorithm:
+Description
+------------
+1) Each server will have a state machine and a log 
+    The state machine in our case is the queue
+2) Each state machine has a log of commands
+    Our case all the commands for the queue.
+3) Consensus ensures each state machine executes the same commands in the same order
+
+Algorithm
+-----------
+Leader election:
+1) Servers have 3 states: follower, candidate, leader
+2) Servers start as followers
+3) Servers time out at different rates and become candidates (election timeout) and request votes from the other servers
+    i) The first candidate starts the term at 1
+    ii) Sends out heartbeats after becoming elected
+    iii) When heartbeats fail, a new election occurs all over
+    iv) If noone receives the majority of votes a new election occurs
+4) Nodes reply with votes, the server with the most votes becomes the leader
+5) Changes from clients go through leader
+6) Each command is added to the leaders log
+    i) initially each command in uncommitted in leaders log
+    ii) to commit the entry the leader sends append entries (heartbeats) to followers and awaits replies from majority of nodes
+        after they have written the entry
+    iii) leader then commits and notifies followers to commit and a response is sent to the client
+7) If there are two leaders, the one with the higher term takes over and everyone rolls back their log to imitate the new leader
+
 '''
 from FTQueue import FTQueue
 

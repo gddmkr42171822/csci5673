@@ -18,18 +18,23 @@ def main():
     label = 5
     item = 10
     s = Server()
-    qid = s.create_Queue(label)
+    
     # Test the queue creation
+    qid = s.create_Queue(label)
     assertion(isinstance(qid, int), "Create queue returned a int as a queue id.")
+    
     # Test that the right label returns the right queue id
     assertion(s.get_qid(label) == qid, "Label return the right qid.")
+    
     # Test that the queue is the right size
     s.push(qid, item)
     assertion(s.qsize(qid) == 1, "Queue is the right size.")
+    
     # Test that the queue retrieves the items in the right order
     s.push(qid, 11)
     assertion(s.pop(qid) == item, "Queue pop returns the right item.")
     assertion(s.top(qid) == 11, "Queue top returns the right item.")
+    assertion(s.qsize(qid) == 1, "Queue should not be empty.")
     
     
     
