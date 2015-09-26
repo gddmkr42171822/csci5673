@@ -16,8 +16,8 @@ Attributes of servers
     The state machine in our case is the queue
 2) Each state machine has a log of commands *completed*
     Our case all the commands for the queue.
-3) Servers have 3 states: follower, candidate, leader
-4) Each server has a timer that times out between 150 to 300 ms, goes to candidate state, and starts an election
+3) Servers have 3 states: follower, candidate, leader *Completed*
+4) Each server has a timer that times out between 150 to 300 ms, goes to candidate state, and starts an election *In Progress*
     Multithreaded timer?
 
 Algorithm
@@ -61,20 +61,24 @@ class Server(object):
         self.queues = {}
         # The server state
         self.state = ServerState.follower
-        # A dictionary of neighbors 
+        # A list of neighbors (server objects), would use a dictionary if we were keeping track of ports and ip's
         self.neighbors = neighbors
-        # A list of commands that create the log
-        self.log = []
+        # The log is a list of tuples of commands associated with a term number
+        # initialize the log to the first term
+        self.log = [('', 1)]
+        
+        # Boolean for whether this server voted or not
+        self.voted = False
         
         # Keep track of the time until the election timeout
-        self.timerStart = 0
-        self.timerEnd = 0
-        self.timerLock = Semaphore()
+        #self.timerStart = 0
+        #self.timerEnd = 0
+        #self.timerLock = Semaphore()
         #self.timerLock.acquire()
         # Create a thread to run the election timer
         # A list of the threads running in the program
-        self.threads = []
-        self.startElectionTimerThreads()
+        #self.threads = []
+        #self.startElectionTimerThreads()
         #self.runElectionTimer()
     
     def startElectionTimerThreads(self):
@@ -106,11 +110,30 @@ class Server(object):
             # Keep track of the time and make server
             # state changes after 3 seconds (3000 milliseconds)
             if c >= 3:
-                print "Hello"
-                #self.timerLock.release()
+                self.timerLock.release()
                 self.timerStart = 0
                 
                 
+    def requestVotes(self):
+        '''
+        '''
+        # Go through each neighbor object and and request their votes
+        # Send them a term number to help determine if the server needs to step down as leader
+        for neighbor in self.neighbors:
+            neighbor.receiveVoteRequest(self, self.log[-1][1])
+            
+    def receiveVoteRequest(self, requester, term):
+        '''
+        '''
+        # Check if this server needs to be overriden by a server with a greater term
+        if term > self.log[-1][1] and self.state.leader:
+            self.state = ServerState.follower
+            #TODO: Get entries from new leader
+        # Check if this server has already sent out a vote
+        elif not self.voted:
+            # Acknowledge that the candidate was voted for
+            requester.acknowledgeVote()
+            self.voted = True
             
         
         
