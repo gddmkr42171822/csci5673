@@ -10,16 +10,19 @@ Pseudocode:
 
 
 Concensus Algorithm:
-Description
+Attributes of servers
 ------------
-1) Each server will have a state machine and a log 
+1) Each server will have a state machine *completed*
     The state machine in our case is the queue
-2) Each state machine has a log of commands
+2) Each state machine has a log of commands *completed*
     Our case all the commands for the queue.
-3) Consensus ensures each state machine executes the same commands in the same order
+3) Servers have 3 states: follower, candidate, leader
+4) Each server has a timer that times out betwee 150 to 300 ms
 
 Algorithm
 -----------
+Consensus ensures each state machine executes the same commands in the same order
+
 Leader election:
 1) Servers have 3 states: follower, candidate, leader
 2) Servers start as followers
@@ -27,7 +30,7 @@ Leader election:
     i) The first candidate starts the term at 1
     ii) Sends out heartbeats after becoming elected
     iii) When heartbeats fail, a new election occurs all over
-    iv) If noone receives the majority of votes a new election occurs
+    iv) If no one receives the majority of votes a new election occurs
 4) Nodes reply with votes, the server with the most votes becomes the leader
 5) Changes from clients go through leader
 6) Each command is added to the leaders log
@@ -47,11 +50,18 @@ class Server(object):
     '''
 
 
-    def __init__(self):
+    def __init__(self, neighbors):
         '''
         Constructor
         '''
+        # A dictionary of queues
         self.queues = {}
+        # The server state
+        self.state = ServerState.follower
+        # A dictionary of neighbors 
+        self.neighbors = neighbors
+        # A list of commands that create the log
+        self.log = []
         
         
         
@@ -109,7 +119,12 @@ class Server(object):
                 # Return the size of the queue
                 return self.queues[key].qsize()
             
-    
-                
+'''
+This class specifies the states a server can be in
+'''
+class ServerState:
+    follower = 1
+    candidate = 2
+    leader = 3
                 
         

@@ -17,7 +17,7 @@ def main():
     print "Running FTQueueTest..."
     label = 5
     item = 10
-    s = Server()
+    s = Server({})
     
     # Test the queue creation
     qid = s.create_Queue(label)
