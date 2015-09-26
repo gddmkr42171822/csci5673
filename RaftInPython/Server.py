@@ -55,7 +55,7 @@ class Server(object):
             if self.queues[key].id == queueID:
                 # Put the item in the bottom of the queue
                 self.queues[key].put(item)
-                break
+                return
     
     def pop(self, queueID):
         # Find the queue associated with the queueID
