@@ -93,7 +93,6 @@ class Server(object):
         while True:
             if self.state == ServerState.leader:
                 if self.kill:
-                    self.removeSelfFromCluster()
                     break
                 else:
                     self.sendHeartbeat()
@@ -214,6 +213,7 @@ class Server(object):
         elif function == "returnlog":
             return self.log
         elif function == "kill":
+            self.removeSelfFromCluster()
             self.kill = True
         
     def create_Queue(self, label):

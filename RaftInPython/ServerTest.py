@@ -15,12 +15,11 @@ def assertion(boolean, testName):
         print(testName + " FAILED")
         
 def main():
-    '''
+    
     testInitialServerState()
     testSingleServerBecomesLeaderVoteRequest
     testSingleServerDoesNotReceiveMajorityVotesShouldNotBecomeLeader()
     testLeaderStateMachineLogReplication()
-    '''
     testElectionTimeout()
     
 def testElectionTimeout():

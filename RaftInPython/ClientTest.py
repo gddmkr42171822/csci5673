@@ -15,11 +15,11 @@ def assertion(boolean, testName):
         print(testName + " FAILED")
         
 def main():
-    #testClientConnectionToWithoutLeadershipChangeInCluster()
-    #testIncorrectClientCommandsToCluster()
-    #testCorrectClientCommandsToCluster()
-    #testClientLoop()
-    #testClientAndServerTimeout()
+    testClientConnectionToWithoutLeadershipChangeInCluster()
+    testIncorrectClientCommandsToCluster()
+    testCorrectClientCommandsToCluster()
+    testClientLoop()
+    testClientAndServerTimeout()
     testClientLoopWithTimeout()
 
 def testClientLoopWithTimeout():
@@ -125,7 +125,7 @@ def testClientAndServerTimeout():
     assertion(len(s2.stateMachine) == 2, "Follower has the right size state machine.")
     
     # Test the killing of the server and re-election
-    s1.kill = True
+    c1.clusterLeader.clientCommand("kill")
     time.sleep(5)
     
     assertion(c1.clusterLeader != s1.uuid, "Client is connected to the new leader.")
