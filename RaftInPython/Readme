@@ -1,0 +1,55 @@
+CSCI 5763
+HW 2
+Problem 2
+
+This is a not fully complete implementation of the Raft consensus algorithm.  
+
+What it does not do:
+--------------------
+1) Committing commands to logs with acknowledgments from followers.
+	As of this writing no acknowledgments are sent back to the leader about commands.
+	The leader overwrites the logs of the followers when I a new command is received.
+2) Dynamic Membership changes.
+	New members cannot be added to the server cluster.
+	Members can be taken away, though.
+3) Leader election does not handle a split vote.
+	At least I do not think what I have written can.
+	I have not created a test to test for this functionality.
+4) No socket programming.
+	This implementation uses in-memory objects to communicate and does not use sockets or ip-addresses.
+5) Detecting least amount of nodes for the raft consensus to work.
+	This implementation will still run even though there is only one server left in the cluster.
+6) Only one client can interact with the cluster.
+
+How to run this:
+---------------------
+In order to run this code you must run:
+
+	$ python main.py
+	
+	This will establish a 5-server cluster and start a client to interact with that cluster.  
+	You can add additional servers by adding duplicates of these lines:
+	
+	s = Server()
+    s.setNeighbors([<list of neighbors>])
+    t = Thread(target=s.electionTimeout)
+    t1.start()
+
+Client commands in the terminal:
+-------------------------------
+create_Queue <enter>
+	<label> <enter> - create a queue referenced by 'label', returns a queue_id
+get_qid <enter>
+	<int label> - return the queue_id referenced by label
+push <enter>
+	<int queue_id> <enter>
+	<int item> <enter> - push the 'item' onto the queue referenced by 'queue_id'
+pop <enter>
+	<int queue_id> - return the first item on the queue referenced by 'queue id'
+top <enter>
+	<int queue_id> - return the value of the first item on the queue referenced by 'queue_id'
+qsize <enter>
+	<int queue_id> <enter>- return the size of the queue referenced by 'queue_id'
+returnlog <enter> - return the log of the current cluster leader
+kill <enter> - kill the current cluster leader (this should create a new election)
+	
