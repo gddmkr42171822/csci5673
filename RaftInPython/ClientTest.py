@@ -14,9 +14,89 @@ def assertion(boolean, testName):
         
 def main():
     testClientConnectionToWithoutLeadershipChangeInCluster()
-    testClientCommandsToCluster()
+    testIncorrectClientCommandsToCluster()
+    testCorrectClientCommandsToCluster()
+    #testClientLoop()
+    
+def testClientLoop():
+    # Establish cluster
+    s1 = Server()
+    s2 = Server()
+    s3 = Server()
+    
+    # Set cluster membership
+    s1.setNeighbors([s2, s3])
+    s2.setNeighbors([s1, s3])
+    s3.setNeighbors([s1, s2])
+    
+    # Create cluster leader
+    # Request an election
+    s3.requestVotes()
+    
+    # Connect the client to the cluster leader through a non-leader
+    c1 = Client()
+    c1.connectClientToLeader(s3)
+    
+    # Use the command line
+    c1.waitForCommands()
 
-def testClientCommandsToCluster():
+def testCorrectClientCommandsToCluster():
+    # Establish cluster
+    s1 = Server()
+    s2 = Server()
+    s3 = Server()
+    
+    # Set cluster membership
+    s1.setNeighbors([s2, s3])
+    s2.setNeighbors([s1, s3])
+    s3.setNeighbors([s1, s2])
+    
+    # Create cluster leader
+    # Request an election
+    s3.requestVotes()
+    
+    # Connect the client to the cluster leader through a non-leader
+    c1 = Client()
+    c1.connectClientToLeader(s1)
+    assertion(c1.clusterLeader.uuid == s3.uuid, "Client is connected to the leader.")
+    
+    # Test queue creation
+    label1 = 1
+    label2 = 2
+    qid1 = c1.clusterLeader.clientCommand("create_Queue", label1)
+    qid2 = c1.clusterLeader.clientCommand("create_Queue", label2)
+    assertion(len(c1.clusterLeader.stateMachine) == 2, "Client successfully created queue.")
+    
+    # Test getting qid
+    assertion(c1.clusterLeader.clientCommand("get_qid", label1) == qid1, "Client successfully retrieved queue id.")
+    assertion(c1.clusterLeader.clientCommand("get_qid", label2) == qid2, "Client successfully retrieved queue id.")
+    
+    # Test pushing, popping, top, and qsize
+    c1.clusterLeader.clientCommand("push", qid1, 5)
+    c1.clusterLeader.clientCommand("push", qid1, 10)
+    assertion(c1.clusterLeader.clientCommand("qsize", qid1) == 2, "Queue has the right size.")
+    assertion(c1.clusterLeader.clientCommand("pop", qid1) == 5, "Client popped the right item off the queue.")
+    assertion(c1.clusterLeader.clientCommand("top", qid1) == 10, "Queue top returned the right item off the queue.")
+    assertion(c1.clusterLeader.clientCommand("qsize", qid1) == 1, "Queue remains the right size.")
+    
+    assertion(("create_Queue {0}".format(label1), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    assertion(("create_Queue {0}".format(label2), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+    assertion(("get_qid {0}".format(label1), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    assertion(("get_qid {0}".format(label2), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+    assertion(("push {0} {1}".format(qid1, 5), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    assertion(("push {0} {1}".format(qid1, 10), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+    assertion(("qsize {0}".format(qid1), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+    assertion(("pop {0}".format(qid1), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+    assertion(("top {0}".format(qid1), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+    assertion(("qsize {0}".format(qid1), 1, False, 0) in c1.clusterLeader.log, "Leader has the right command in the log.")
+    
+def testIncorrectClientCommandsToCluster():
     # Establish cluster
     s1 = Server()
     s2 = Server()
@@ -52,7 +132,7 @@ def testClientCommandsToCluster():
     c1.clusterLeader.push(qid1, 10)
     assertion(c1.clusterLeader.qsize(qid1) == 2, "Queue has the right size.")
     assertion(c1.clusterLeader.pop(qid1) == 5, "Client popped the right item off the queue.")
-    assertion(c1.clusterLeader.top(qid1) == 10, "Client topped the right item off the queue.")
+    assertion(c1.clusterLeader.top(qid1) == 10, "Queue top returned the right item off the queue.")
     assertion(c1.clusterLeader.qsize(qid1) == 1, "Queue remains the right size.")
     
 

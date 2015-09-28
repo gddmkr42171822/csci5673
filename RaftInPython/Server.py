@@ -43,12 +43,6 @@ Log Replication:
 3) Candidate votes for itself and requests votes *COMPLETED*
 4) Followers duplicate leaders log, state machine *COMPLETED*
 
-Client Interaction:
-1) Changes from clients go through leader
-    i) Client needs to be automatically assigned to the leader
-    ii) Should only need to know one node in the cluster
-
-
 '''
 from FTQueue import FTQueue
 import uuid
@@ -75,7 +69,7 @@ class Server(object):
         # The log is a list of tuples of commands associated with a term number and committed or not
         # initialize the log to the first term
         # (Command, Term, Commited?, Number of Acknowledgments)
-        self.log = [('', 1, True, 0)]
+        self.log = [("", 1, True, 0)]
         
         # Boolean for whether this server voted or not
         self.voted = False
@@ -125,10 +119,7 @@ class Server(object):
             self.state = ServerState.leader
             print self.uuid + " became the leader."
             
-            # Send appendMessage to other neighbors to tell them this server is the leader
-            # and to make sure they have the right state machine and logs
-            for neighbor in self.neighbors:
-                neighbor.appendEntries(self, self.log, self.stateMachine)
+            self.propagateChangesToFollowers()
     
     def appendEntries(self, clusterLeader, log, stateMachine):
         # Set the leader of the cluster
@@ -142,6 +133,36 @@ class Server(object):
         
         # TODO: Acknowledge to the leader entry or entries were appended   
         # TODO: Commit the entries? 
+    
+    def propagateChangesToFollowers(self):
+        # Send appendMessage to other neighbors to tell them this server is the leader
+        # and to make sure they have the right state machine and logs
+        for neighbor in self.neighbors:
+            neighbor.appendEntries(self, self.log, self.stateMachine)
+    
+    def clientCommand(self, function, *args):
+        '''
+        '''
+        if function == "create_Queue":
+            self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            return self.create_Queue(args[0])
+        elif function == "get_qid":
+            self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            return self.get_qid(args[0])
+        elif function == "push":
+            self.log.append(("{0} {1} {2}".format(function, args[0], args[1]), self.log[-1][1], False, 0))
+            return self.push(args[0], args[1])
+        elif function == "pop":
+            self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            return self.pop(args[0])
+        elif function == "top":
+            self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            return self.top(args[0])
+        elif function == "qsize":
+            self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            return self.qsize(args[0])
+        elif function == "returnlog":
+            return self.log
         
     def create_Queue(self, label):
         '''
@@ -150,7 +171,8 @@ class Server(object):
         # If we don't already have a queue with this label
         if label not in self.stateMachine:
             # Associate a label with a new queue of integers
-            self.stateMachine[label] =  FTQueue(label)
+            # Queues could be created with same qid
+            self.stateMachine[label] = FTQueue(label)
             # Get the queue id from the new queue and return it
             queueID = self.stateMachine[label].id
             return queueID

@@ -39,9 +39,9 @@ def testSingleServerBecomesLeaderVoteRequest():
     
     assertion(s1.votesReceived == 3, "Server have received the right number of votes.")
     assertion(s1.state == ServerState.leader, "Server should have been elected the leader.")
-    assertion(s2.voted == True, "Server shoud have voted.")
-    assertion(s3.voted == True, "Server shoud have voted.")
-    assertion(s1.voted == True, "Server shoud have voted for itself.")
+    assertion(s2.voted == True, "Server should have voted.")
+    assertion(s3.voted == True, "Server should have voted.")
+    assertion(s1.voted == True, "Server should have voted for itself.")
     assertion(s1.log[0][1] == 1, "Server has the right term in the log.")
 
 def testSingleServerDoesNotReceiveMajorityVotesShouldNotBecomeLeader():
