@@ -228,6 +228,9 @@ class Server(object):
             # Get the queue id from the new queue and return it
             queueID = self.stateMachine[label].id
             return queueID
+        else:
+            print "Queue has already been created."
+            return 0
        
         
     def get_qid(self, label):
