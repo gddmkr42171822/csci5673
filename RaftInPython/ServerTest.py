@@ -5,6 +5,8 @@ Created on Sep 25, 2015
 '''
 from Server import Server
 from Server import ServerState
+from threading import Thread
+import time
 
 def assertion(boolean, testName):
     if boolean:
@@ -13,11 +15,51 @@ def assertion(boolean, testName):
         print(testName + " FAILED")
         
 def main():
+    '''
     testInitialServerState()
     testSingleServerBecomesLeaderVoteRequest
     testSingleServerDoesNotReceiveMajorityVotesShouldNotBecomeLeader()
     testLeaderStateMachineLogReplication()
-    pass
+    '''
+    testElectionTimeout()
+    
+def testElectionTimeout():
+    s1 = Server()
+    s2 = Server()
+    s3 = Server()
+    
+    s1.setNeighbors([s2, s3])
+    s2.setNeighbors([s1, s3])
+    s3.setNeighbors([s1, s2])
+    
+    t1 = Thread(target=s1.electionTimeout)
+    t1.start()
+    time.sleep(5)
+    t2 = Thread(target=s2.electionTimeout)
+    t2.start()
+    t3 = Thread(target=s3.electionTimeout)
+    t3.start()
+    
+    # Add to the leaders log a command no none else has
+    s1.clusterLeader.log.append(("test", 1, False, 0))
+    
+    # Add a state machine no one else has
+    s1.clusterLeader.stateMachine[1] = "test"
+
+    time.sleep(5)
+    assertion(s1.state == ServerState.leader, "Server should be the leader.")
+    assertion(s2.state == ServerState.follower, "Server should be the follower.")
+    assertion(s3.state == ServerState.follower, "Server should be the follower.")
+    
+    assertion(len(s1.clusterLeader.log) == 2, "Server has the right size log.")
+    assertion(s1.log == s2.log, "Server has the right log.")
+    assertion(s3.log == s2.log, "Server has the right log.")
+    assertion(s2.log == s3.log, "Server has the right log.")
+    
+    assertion(len(s1.stateMachine) == 1, "Server has the right size state machine.")
+    assertion(s1.stateMachine[1] == s2.stateMachine[1], "Server has the right state machine")
+    
+    
 
 def testInitialServerState():
     s = Server()

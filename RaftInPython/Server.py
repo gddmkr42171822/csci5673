@@ -46,6 +46,7 @@ Log Replication:
 '''
 from FTQueue import FTQueue
 import uuid
+import time
 
 
 class Server(object):
@@ -79,6 +80,34 @@ class Server(object):
         
         # Cluster leader uuid
         self.clusterLeader = None
+        
+        # Tell the server if it should create an election or not
+        self.timeout = False
+        
+        # Kill this server
+        self.kill = False
+    
+    def electionTimeout(self):
+        '''
+        '''
+        while True:
+            if self.state == ServerState.leader:
+                if self.kill:
+                    self.removeSelfFromCluster()
+                    break
+                else:
+                    self.sendHeartbeat()
+            elif self.timeout:
+                print self.uuid + " is requesting a vote."
+                self.requestVotes()
+            else:
+                self.timeout = True
+                time.sleep(3)
+                
+    def removeSelfFromCluster(self):
+        for neighbor in self.neighbors:
+            if self in neighbor.neighbors:
+                neighbor.neighbors.remove(self)
             
     def setNeighbors(self, neighbors):
         # A list of neighbors (server objects), would use a dictionary if we were keeping track of ports and ip's
@@ -102,11 +131,13 @@ class Server(object):
         '''
         '''
         # Check if this server has already sent out a vote
-        if not self.voted:
+        if not self.voted and self.kill == False:
             # Acknowledge that the candidate was voted for
             requester.acknowledgeVoteRequest()
             self.voted = True
             print self.uuid + " has voted for " + requester.uuid + "."
+        elif self.kill:
+            print "Server cannot vote because it is dead."
         else:
             print self.uuid + " has already voted."
     
@@ -118,23 +149,37 @@ class Server(object):
         if self.votesReceived >= (len(self.neighbors) - 1) and self.state != ServerState.leader:
             self.state = ServerState.leader
             print self.uuid + " became the leader."
+        
             
-            self.propagateChangesToFollowers()
+            self.sendHeartbeat()
     
     def appendEntries(self, clusterLeader, log, stateMachine):
         # Set the leader of the cluster
         self.clusterLeader = clusterLeader
         
+        # Set the other servers involved in the election to followers
+        if clusterLeader is not self:
+            self.state = ServerState.follower
+        
         # Force the followers to duplicate the leader's log
         self.log = log
                 
         # Force the followers to duplicate the leader's state machine
-        self.stateMachine = stateMachine    
+        self.stateMachine = stateMachine
+        
+        # Set the timeout of the followers to false
+        self.timeout = False
+        
+        # Followers vote should be false for next election
+        self.voted = False
+        
+        # Reset the votes this server has received
+        self.votesReceived = 0
         
         # TODO: Acknowledge to the leader entry or entries were appended   
         # TODO: Commit the entries? 
     
-    def propagateChangesToFollowers(self):
+    def sendHeartbeat(self):
         # Send appendMessage to other neighbors to tell them this server is the leader
         # and to make sure they have the right state machine and logs
         for neighbor in self.neighbors:
@@ -145,24 +190,31 @@ class Server(object):
         '''
         if function == "create_Queue":
             self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            self.sendHeartbeat()
             return self.create_Queue(args[0])
         elif function == "get_qid":
             self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            self.sendHeartbeat()
             return self.get_qid(args[0])
         elif function == "push":
             self.log.append(("{0} {1} {2}".format(function, args[0], args[1]), self.log[-1][1], False, 0))
+            self.sendHeartbeat()
             return self.push(args[0], args[1])
         elif function == "pop":
             self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            self.sendHeartbeat()
             return self.pop(args[0])
         elif function == "top":
             self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
+            self.sendHeartbeat()
             return self.top(args[0])
         elif function == "qsize":
             self.log.append(("{0} {1}".format(function, args[0]), self.log[-1][1], False, 0))
             return self.qsize(args[0])
         elif function == "returnlog":
             return self.log
+        elif function == "kill":
+            self.kill = True
         
     def create_Queue(self, label):
         '''
