@@ -17,9 +17,10 @@ What it does not do:
 	I have not created a test to test for this functionality.
 4) No socket programming.
 	This implementation uses in-memory objects to communicate and does not use sockets or ip-addresses.
-5) Detecting least amount of nodes for the raft consensus to work.
+5) Does no detect the least amount of nodes for the raft consensus to work.
 	This implementation will still run even though there is only one server left in the cluster.
 6) Only one client can interact with the cluster.
+	Would probably need socket programming to fix this.
 
 How to run this:
 ---------------------
@@ -38,18 +39,25 @@ In order to run this code you must run:
 Client commands in the terminal:
 -------------------------------
 create_Queue <enter>
-	<label> <enter> - create a queue referenced by 'label', returns a queue_id
+	<int label> <enter> - create a queue referenced by 'label', returns a queue_id
+	
 get_qid <enter>
 	<int label> - return the queue_id referenced by label
+	
 push <enter>
 	<int queue_id> <enter>
 	<int item> <enter> - push the 'item' onto the queue referenced by 'queue_id'
+	
 pop <enter>
 	<int queue_id> - return the first item on the queue referenced by 'queue id'
+	
 top <enter>
 	<int queue_id> - return the value of the first item on the queue referenced by 'queue_id'
+	
 qsize <enter>
 	<int queue_id> <enter>- return the size of the queue referenced by 'queue_id'
+	
 returnlog <enter> - return the log of the current cluster leader
+
 kill <enter> - kill the current cluster leader (this should create a new election)
 	

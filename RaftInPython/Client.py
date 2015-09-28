@@ -9,7 +9,7 @@ Client Interaction:
     ii) Should only need to know one node in the cluster
     iii) Client should be in a while true loop and take commands from the command line
 '''
-import time
+import sys
 
 class Client(object):
     '''
@@ -28,13 +28,14 @@ class Client(object):
                     self.clusterLeader = server.clusterLeader
                     return True
         print "Could not find the cluster leader."
+        return
     
     def waitForCommands(self):
         while True:
             if self.connectClientToLeader(self.cluster):
                 function = raw_input("Enter the function you want to call or 'quit': ")
                 if function == "quit":
-                    return
+                    sys.exit()
                 elif function == "create_Queue":
                     label = raw_input("Enter queue label: ")
                     qid = self.clusterLeader.clientCommand(function, int(label))
@@ -66,7 +67,7 @@ class Client(object):
                     print log
                 elif function == "kill":
                     self.clusterLeader.clientCommand(function)
-                    print "Killing the leader."
+                    print "Killing the cluster leader."
                 else:
                     print "That is not a valid function."
                 

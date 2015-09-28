@@ -20,7 +20,7 @@ def main():
     testCorrectClientCommandsToCluster()
     testClientLoop()
     testClientAndServerTimeout()
-    testClientLoopWithTimeout()
+    testClientLoopWithTimeout()    
 
 def testClientLoopWithTimeout():
     s1 = Server()

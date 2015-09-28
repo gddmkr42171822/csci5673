@@ -35,11 +35,17 @@ class FTQueue(object):
     def get(self):
         '''
         '''
-        return self.queue.pop(0)
+        if len(self.queue) > 0:
+            return self.queue.pop(0)
+        else:
+            return 0
     
     def top(self):
         '''
         '''
-        return self.queue[0]
+        if len(self.queue) > 0:
+            return self.queue[0]
+        else:
+            return 0
     
         
