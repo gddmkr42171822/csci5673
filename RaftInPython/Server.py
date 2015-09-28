@@ -17,7 +17,7 @@ Attributes of servers
 2) Each state machine has a log of commands *completed*
     Our case all the commands for the queue.
 3) Servers have 3 states: follower, candidate, leader *Completed*
-4) Each server has a timer that times out between 150 to 300 ms, goes to candidate state, and starts an election *In Progress*
+4) Each server has a timer that times out between 150 to 300 ms, goes to candidate state, and starts an election *Delayed*
     Multithreaded timer?
 
 Algorithm
@@ -25,26 +25,33 @@ Algorithm
 Consensus ensures each state machine executes the same commands in the same order
 
 Leader election:
-1) Servers have 3 states: follower, candidate, leader
-2) Servers start as followers
-3) Servers time out at different rates and become candidates (election timeout) and request votes from the other servers
-    i) The first candidate starts the term at 1
-    ii) Sends out heartbeats after becoming elected
-    iii) When heartbeats fail, a new election occurs all over
-    iv) If no one receives the majority of votes a new election occurs
-4) Nodes reply with votes, the server with the most votes becomes the leader
-5) Changes from clients go through leader
-6) Each command is added to the leaders log
+1) Servers start as followers *Completed*
+2) Servers time out at different rates and become candidates (election timeout) and request votes from the other servers
+    i) The first candidate starts the term at 1 *Completed*
+    ii) Sends out heartbeats after becoming elected *Completed*
+    iii) When heartbeats fail, a new election occurs all over *NOT STARTED*
+    iv) If no one receives the majority of votes a new election occurs *NOT STARTED*
+3) Nodes reply with votes, the server with the most votes becomes the leader *Completed*
+
+Log Replication:
+1) Each command is added to the leaders log *NOT STARTED*
     i) initially each command in uncommitted in leaders log
     ii) to commit the entry the leader sends append entries (heartbeats) to followers and awaits replies from majority of nodes
         after they have written the entry
     iii) leader then commits and notifies followers to commit and a response is sent to the client
-7) If there are two leaders, the one with the higher term takes over and everyone rolls back their log to imitate the new leader
+2) If there are two leaders, the one with the higher term takes over and everyone rolls back their log to imitate the new leader *NOT STARTED*
+3) Candidate votes for itself and requests votes *COMPLETED*
+4) Followers duplicate leaders log, state machine *COMPLETED*
+
+Client Interaction:
+1) Changes from clients go through leader
+    i) Client needs to be automatically assigned to the leader
+    ii) Should only need to know one node in the cluster
+
 
 '''
 from FTQueue import FTQueue
-from threading import Thread, Semaphore
-import time
+import uuid
 
 
 class Server(object):
@@ -53,100 +60,99 @@ class Server(object):
     '''
 
 
-    def __init__(self, neighbors):
+    def __init__(self):
         '''
         Constructor
         '''
+        self.uuid = str(uuid.uuid4())
+        
         # A dictionary of queues
-        self.queues = {}
+        self.stateMachine = {}
+        
         # The server state
         self.state = ServerState.follower
-        # A list of neighbors (server objects), would use a dictionary if we were keeping track of ports and ip's
-        self.neighbors = neighbors
-        # The log is a list of tuples of commands associated with a term number
+        
+        # The log is a list of tuples of commands associated with a term number and committed or not
         # initialize the log to the first term
-        self.log = [('', 1)]
+        # (Command, Term, Commited?, Number of Acknowledgments)
+        self.log = [('', 1, True, 0)]
         
         # Boolean for whether this server voted or not
         self.voted = False
         
-        # Keep track of the time until the election timeout
-        #self.timerStart = 0
-        #self.timerEnd = 0
-        #self.timerLock = Semaphore()
-        #self.timerLock.acquire()
-        # Create a thread to run the election timer
-        # A list of the threads running in the program
-        #self.threads = []
-        #self.startElectionTimerThreads()
-        #self.runElectionTimer()
-    
-    def startElectionTimerThreads(self):
-        worker = Thread(target=self.runElectionTimer)
-        worker.start()
-        self.threads.append(worker)
-        print "Started election timer thread."
-        #worker = Thread(target=self.changeServerState)
-        #worker.start()
-        #self.threads.append(worker)
-        #print "Started change server state thread."
-    
-    def changeServerState(self):
-        while True:
-            self.timerLock.acquire()
-            #if self.state == ServerState.follower:
-            #print "Changing server state to candidate."
-            self.state = ServerState.candidate
-            # TODO: Create a new election
-            
+        # Number of votes the server has received
+        self.votesReceived = 0
         
-    def runElectionTimer(self):
-        while True:
-            if self.timerStart == 0:
-                self.timerStart = time.time()
-            self.timerEnd = time.time()
-            c = self.timerEnd - self.timerStart
-            #sys.exit()
-            # Keep track of the time and make server
-            # state changes after 3 seconds (3000 milliseconds)
-            if c >= 3:
-                self.timerLock.release()
-                self.timerStart = 0
-                
+        # Cluster leader uuid
+        self.clusterLeader = None
+            
+    def setNeighbors(self, neighbors):
+        # A list of neighbors (server objects), would use a dictionary if we were keeping track of ports and ip's
+        self.neighbors = neighbors
+        # The server should include itself in the list of neighbors
+        self.neighbors.append(self)
                 
     def requestVotes(self):
         '''
         '''
-        # Go through each neighbor object and and request their votes
+        # Change into a candidate to ask for votes
+        self.state = ServerState.candidate
+        
+        # Go through each neighbor object and request their votes
         # Send them a term number to help determine if the server needs to step down as leader
-        for neighbor in self.neighbors:
-            neighbor.receiveVoteRequest(self, self.log[-1][1])
+        if self.neighbors:
+            for neighbor in self.neighbors:
+                neighbor.receiveVoteRequest(self, self.log[-1][1])
             
     def receiveVoteRequest(self, requester, term):
         '''
         '''
-        # Check if this server needs to be overriden by a server with a greater term
-        if term > self.log[-1][1] and self.state.leader:
-            self.state = ServerState.follower
-            #TODO: Get entries from new leader
         # Check if this server has already sent out a vote
-        elif not self.voted:
+        if not self.voted:
             # Acknowledge that the candidate was voted for
-            requester.acknowledgeVote()
+            requester.acknowledgeVoteRequest()
             self.voted = True
+            print self.uuid + " has voted for " + requester.uuid + "."
+        else:
+            print self.uuid + " has already voted."
+    
+    def acknowledgeVoteRequest(self):
+        '''
+        '''
+        self.votesReceived += 1
+        # If this server gets the majority of the votes it should become the leader
+        if self.votesReceived >= (len(self.neighbors) - 1) and self.state != ServerState.leader:
+            self.state = ServerState.leader
+            print self.uuid + " became the leader."
             
+            # Send appendMessage to other neighbors to tell them this server is the leader
+            # and to make sure they have the right state machine and logs
+            for neighbor in self.neighbors:
+                neighbor.appendEntries(self, self.log, self.stateMachine)
+    
+    def appendEntries(self, clusterLeader, log, stateMachine):
+        # Set the leader of the cluster
+        self.clusterLeader = clusterLeader
         
+        # Force the followers to duplicate the leader's log
+        self.log = log
+                
+        # Force the followers to duplicate the leader's state machine
+        self.stateMachine = stateMachine    
+        
+        # TODO: Acknowledge to the leader entry or entries were appended   
+        # TODO: Commit the entries? 
         
     def create_Queue(self, label):
         '''
         TODO: Docstrings
         '''
         # If we don't already have a queue with this label
-        if label not in self.queues:
+        if label not in self.stateMachine:
             # Associate a label with a new queue of integers
-            self.queues[label] =  FTQueue(label)
+            self.stateMachine[label] =  FTQueue(label)
             # Get the queue id from the new queue and return it
-            queueID = self.queues[label].id
+            queueID = self.stateMachine[label].id
             return queueID
        
         
@@ -156,7 +162,7 @@ class Server(object):
         '''
         
         # Get the queue id from the queue associated with the label and return it
-        queueID = self.queues[label].id
+        queueID = self.stateMachine[label].id
         return queueID
     
     def push(self, queueID, item):
@@ -164,32 +170,32 @@ class Server(object):
         TODO: Docstrings
         '''
         # Find the queue associated with the queueID
-        for key in self.queues:
-            if self.queues[key].id == queueID:
+        for key in self.stateMachine:
+            if self.stateMachine[key].id == queueID:
                 # Put the item in the bottom of the queue
-                self.queues[key].put(item)
+                self.stateMachine[key].put(item)
                 return
     
     def pop(self, queueID):
         # Find the queue associated with the queueID
-        for key in self.queues:
-            if self.queues[key].id == queueID:
+        for key in self.stateMachine:
+            if self.stateMachine[key].id == queueID:
                 # Returns the first item on the queue
-                return self.queues[key].get()
+                return self.stateMachine[key].get()
             
     def top(self, queueID):
         # Find the queue associated with the queueID
-        for key in self.queues:
-            if self.queues[key].id == queueID:
+        for key in self.stateMachine:
+            if self.stateMachine[key].id == queueID:
                 # Returns the first item on the queue
-                return self.queues[key].top()
+                return self.stateMachine[key].top()
     
     def qsize(self, queueID):
         # Find the queue associated with the queueID
-        for key in self.queues:
-            if self.queues[key].id == queueID:
+        for key in self.stateMachine:
+            if self.stateMachine[key].id == queueID:
                 # Return the size of the queue
-                return self.queues[key].qsize()
+                return self.stateMachine[key].qsize()
             
 '''
 This class specifies the states a server can be in
