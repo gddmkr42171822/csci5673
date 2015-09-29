@@ -83,7 +83,7 @@ def testSingleServerBecomesLeaderVoteRequest():
     assertion(s2.voted == True, "Server should have voted.")
     assertion(s3.voted == True, "Server should have voted.")
     assertion(s1.voted == True, "Server should have voted for itself.")
-    assertion(s1.log[0][1] == 1, "Server has the right term in the log.")
+    assertion(s1.log[0][1] == 0, "Server has the right term in the log.")
 
 def testSingleServerDoesNotReceiveMajorityVotesShouldNotBecomeLeader():
     s1 = Server()
@@ -112,16 +112,17 @@ def testLeaderStateMachineLogReplication():
     s2.setNeighbors([s1, s3])
     s3.setNeighbors([s1, s2])
     
-    # Add to the leaders log a command no none else has
-    s2.log.append(("test", 1, False, 0))
-    
     # Add a state machine no one else has
     s2.stateMachine[1] = "test"
     
     # Request an election
     s2.requestVotes()
     
-    assertion(s1.log[-1][0] == "test", "Server has the correct log.")
+    # Add to the leaders log a command no none else has
+    #s2.log.append(("test", 1, False, 0))
+    
+    assertion(s1.log[-1][0] == "New Term", "Server has the correct log.")
+    assertion(s1.log[-1][1] == 1, "Server is in right term.")
     assertion(s3.clusterLeader.uuid == s2.uuid, "Server has the correct leader.")
     assertion(s1.stateMachine[1] == "test", "Server has the correct state machine.")
         

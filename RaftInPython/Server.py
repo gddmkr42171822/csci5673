@@ -43,6 +43,10 @@ Log Replication:
 3) Candidate votes for itself and requests votes *COMPLETED*
 4) Followers duplicate leaders log, state machine *COMPLETED*
 
+Fault Tolerance:
+-----------------
+1) A cluster can tolerate n/2 - 1 server failures.
+
 '''
 from FTQueue import FTQueue
 import uuid
@@ -68,9 +72,9 @@ class Server(object):
         self.state = ServerState.follower
         
         # The log is a list of tuples of commands associated with a term number and committed or not
-        # initialize the log to the first term
+        # initialize the log to the 0th term
         # (Command, Term, Commited?, Number of Acknowledgments)
-        self.log = [("", 1, True, 0)]
+        self.log = [("Initialization", 0, True, 0)]
         
         # Boolean for whether this server voted or not
         self.voted = False
@@ -86,7 +90,7 @@ class Server(object):
         
         # Kill this server
         self.kill = False
-    
+            
     def electionTimeout(self):
         '''
         '''
@@ -96,19 +100,24 @@ class Server(object):
                     break
                 else:
                     self.sendHeartbeat()
-            elif self.timeout:
-                print self.uuid + " is requesting a vote."
+            elif self.timeout and not self.voted:
+                print "\n{0} is requesting an election.".format(self.uuid)
                 self.requestVotes()
             else:
                 self.timeout = True
                 time.sleep(3)
                 
     def removeSelfFromCluster(self):
+        '''
+        '''
         for neighbor in self.neighbors:
+            # Remove the dead leader from the server cluster
             if self in neighbor.neighbors:
                 neighbor.neighbors.remove(self)
             
     def setNeighbors(self, neighbors):
+        '''
+        '''
         # A list of neighbors (server objects), would use a dictionary if we were keeping track of ports and ip's
         self.neighbors = neighbors
         # The server should include itself in the list of neighbors
@@ -129,30 +138,43 @@ class Server(object):
     def receiveVoteRequest(self, requester, term):
         '''
         '''
-        # Check if this server has already sent out a vote
-        if not self.voted and self.kill == False:
+        # If the server is requesting a vote for itself
+        if self is requester:
+            requester.acknowledgeVoteRequest()
+            print "\n{0} voted for itself.".format(self.uuid)
+        # Check if this server has already sent out a vote to another server
+        elif not self.voted:
             # Acknowledge that the candidate was voted for
             requester.acknowledgeVoteRequest()
             self.voted = True
-            print self.uuid + " has voted for " + requester.uuid + "."
-        elif self.kill:
-            print "Server cannot vote because it is dead."
+            print "\n{0} has voted for {1}.".format(self.uuid, requester.uuid)
         else:
-            print self.uuid + " has already voted."
+            print "\n{0} has already voted.".format(self.uuid)
     
     def acknowledgeVoteRequest(self):
         '''
         '''
         self.votesReceived += 1
         # If this server gets the majority of the votes it should become the leader
-        if self.votesReceived >= (len(self.neighbors) - 1) and self.state != ServerState.leader:
+        if self.votesReceived >= len(self.neighbors):
             self.state = ServerState.leader
-            print self.uuid + " became the leader."
-        
-            
+            print "\n{0} became the leader.".format(self.uuid)
+            # Increment the term since a new election happened
+            self.log.append((("New Term", self.log[-1][1] + 1, True, 0)))
+            # Start sending heartbeats to the new leaders followers, reset the followers attributes
             self.sendHeartbeat()
     
+    def sendHeartbeat(self):
+        '''
+        '''
+        # Send appendMessage to other neighbors to tell them this server is the leader
+        # and to make sure they have the right state machine and logs
+        for neighbor in self.neighbors:
+            neighbor.appendEntries(self, self.log, self.stateMachine)
+    
     def appendEntries(self, clusterLeader, log, stateMachine):
+        '''
+        '''
         # Set the leader of the cluster
         self.clusterLeader = clusterLeader
         
@@ -177,12 +199,6 @@ class Server(object):
         
         # TODO: Acknowledge to the leader entry or entries were appended   
         # TODO: Commit the entries? 
-    
-    def sendHeartbeat(self):
-        # Send appendMessage to other neighbors to tell them this server is the leader
-        # and to make sure they have the right state machine and logs
-        for neighbor in self.neighbors:
-            neighbor.appendEntries(self, self.log, self.stateMachine)
     
     def clientCommand(self, function, *args):
         '''

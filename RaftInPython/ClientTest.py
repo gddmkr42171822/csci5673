@@ -15,12 +15,12 @@ def assertion(boolean, testName):
         print(testName + " FAILED")
         
 def main():
-    testClientConnectionToWithoutLeadershipChangeInCluster()
-    testIncorrectClientCommandsToCluster()
-    testCorrectClientCommandsToCluster()
-    testClientLoop()
+    #testClientConnectionToWithoutLeadershipChangeInCluster()
+    #testIncorrectClientCommandsToCluster()
+    #testCorrectClientCommandsToCluster()
+    #testClientLoop()
     testClientAndServerTimeout()
-    testClientLoopWithTimeout()    
+    #testClientLoopWithTimeout()    
 
 def testClientLoopWithTimeout():
     s1 = Server()
@@ -130,11 +130,9 @@ def testClientAndServerTimeout():
     
     assertion(c1.clusterLeader != s1.uuid, "Client is connected to the new leader.")
     assertion(len(c1.clusterLeader.neighbors) == 2, "New leader has the right number of neighbors.")
-    
-    
-    
-    
-    
+    time.sleep(5)
+    assertion(c1.clusterLeader.log[-1][1] == 2, "The cluster is in the right term.")    
+       
 def testClientLoop():
     # Establish cluster
     s1 = Server()

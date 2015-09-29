@@ -21,6 +21,11 @@ What it does not do:
 	This implementation will still run even though there is only one server left in the cluster.
 6) Only one client can interact with the cluster.
 	Would probably need socket programming to fix this.
+	
+Known bugs:
+-----------
+1) If two servers request an election at the same time both elections will occur.  The first server
+	will become the leader but later on the second server who requested the later election will become the final leader.
 
 How to run this:
 ---------------------
