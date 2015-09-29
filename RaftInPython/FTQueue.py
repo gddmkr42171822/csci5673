@@ -9,13 +9,15 @@ from random import randint
 
 class FTQueue(object):
     '''
-    classdocs
+    FTQueue is supposed to be a distributed object that
+    is replicated amoun multiple 'servers'
     '''
 
 
     def __init__(self, label):
         '''
-        Constructor
+        The queue will be represented as a list
+        with an id between 0 and 100
         '''
         # Create new queue/list
         self.queue = []
@@ -24,16 +26,19 @@ class FTQueue(object):
     
     def put(self, item):
         '''
+        Adds an item to the queue
         '''
         self.queue.append(item)
         
     def qsize(self):
         '''
+        Returns the size of the queue
         '''
         return len(self.queue)
     
     def get(self):
         '''
+        Gets the top item off the queue and returns it
         '''
         if len(self.queue) > 0:
             return self.queue.pop(0)
@@ -42,6 +47,7 @@ class FTQueue(object):
     
     def top(self):
         '''
+        Returns the value of the item on top of the queue
         '''
         if len(self.queue) > 0:
             return self.queue[0]
