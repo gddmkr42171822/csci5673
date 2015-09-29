@@ -51,6 +51,7 @@ Fault Tolerance:
 from FTQueue import FTQueue
 import uuid
 import time
+from random import randint
 
 
 class Server(object):
@@ -105,7 +106,7 @@ class Server(object):
                 self.requestVotes()
             else:
                 self.timeout = True
-                time.sleep(3)
+                time.sleep(randint(1, 3))
                 
     def removeSelfFromCluster(self):
         '''

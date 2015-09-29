@@ -26,6 +26,7 @@ Known bugs:
 -----------
 1) If two servers request an election at the same time both elections will occur.  The first server
 	will become the leader but later on the second server who requested the later election will become the final leader.
+	*TENTATIVELY FIXED BY RANDOMIZING TIMEOUT*
 
 How to run this:
 ---------------------
